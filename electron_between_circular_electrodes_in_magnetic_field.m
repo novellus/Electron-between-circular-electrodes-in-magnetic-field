@@ -26,25 +26,27 @@ vy=0;
 x=R0;
 vx=0;
 
-%Position, time, and power of emmitted radiation (single electron)
+%Position, time, power of emmitted radiation (single electron), and velocity as a fraction of the speed of light
 xg=[x];
 yg=[y];
 tg=[0];
 pg=[0];
+vcg=[sqrt(vx^2+vy^2)/299792458];
 
 for i=1:10000,
-    x=x+vx*dt;
-    y=y+vy*dt;
-    xg=[xg x];
-    yg=[yg y];
-    tg=[tg dt+tg(end)];
     [K,E]=ellipke(sqrt(4*sqrt(x^2+y^2)/(Rb*(1+sqrt(x^2+y^2)/Rb)^2)));
     B=I*u0*N/(2*pi*Rb*(1+sqrt(x^2+y^2)/Rb))*(K+E*(1-(x^2+y^2)/Rb^2)/((1+sqrt(x^2+y^2)/Rb)^2-4*sqrt(x^2+y^2)/Rb));
     ax=q/m*(-V*x/(log(R/R0)*(x^2+y^2))+B*vy);
     ay=q/m*(-V*y/(log(R/R0)*(x^2+y^2))-B*vx);
-    pg=[pg q^2*(ax^2+ay^2)/(6*pi*e0*c^3)];
     vx=vx+ax*dt;
     vy=vy+ay*dt;
+    x=x+vx*dt;
+    y=y+vy*dt;
+    tg=[tg dt+tg(end)];
+    xg=[xg x];
+    yg=[yg y];
+    pg=[pg q^2*(ax^2+ay^2)/(6*pi*e0*c^3)];
+    vcg=[vcg sqrt(vx^2+vy^2)/299792458];
     if(sqrt(x^2+y^2)>R || sqrt(x^2+y^2)<R0) %Stop if the electron collides with an electrode
         break;
     end
@@ -62,13 +64,23 @@ for j=1:1000,
     c2x=[c2x R*cos(2*pi*j/1000)];
     c2y=[c2y R*sin(2*pi*j/1000)];
 end
-figure('Position',[1200,620,700,500])
-plot(xg,yg,c1x,c1y,c2x,c2y)
-title('position (m)')
-axis equal
-figure('Position',[1200,50,700,500])
-plot(tg,pg)
-xlabel('time (sec)')
-ylabel('power radiated per timestep (watts)')
+
+figure('Position',[1200,620,700,500]);
+plot(xg,yg,c1x,c1y,c2x,c2y);
+title('position (m)');
+axis equal;
+
+figure('Position',[1200,50,700,500]);
+s1=subplot(2,1,1);
+plot(tg,pg);
+xlabel('time (sec)');
+ylabel('power radiated/e- (watts)');
+
+s2=subplot(2,1,2);
+plot(tg,vcg);
+xlabel('time (sec)');
+ylabel('v/c');
+linkaxes([s1 s2],'x');
+
 totalPowerRadiated_Watts=sum(dt*pg)*neps
-exposureTimeToOneYearRadLimit_years=.05*70/totalPowerRadiated_Watts/60/60/24/365 %50mSv (Sv=J/kg) is US rad worker yearly limit
+exposureTimeToOneYearRadLimit_days=.05*70/totalPowerRadiated_Watts/60/60/24 %50mSv (Sv=J/kg) is US rad worker yearly limit
