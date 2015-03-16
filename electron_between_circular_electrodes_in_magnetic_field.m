@@ -26,27 +26,29 @@ vy=0;
 x=R0;
 vx=0;
 
-%Position, time, power of emmitted radiation (single electron), and velocity as a fraction of the speed of light
-xg=[x];
-yg=[y];
-tg=[0];
-pg=[0];
-vcg=[sqrt(vx^2+vy^2)/299792458];
+%Position, time, , and 
+xg=[]; %Position
+yg=[]; %Position
+tg=[]; %time
+pg=[]; %power of emmitted radiation (single electron)
+vcg=[]; %velocity as a fraction of the speed of light
+Bg=[];
 
 for i=1:10000,
+    tg=[tg dt*(i-1)];
+    xg=[xg x];
+    yg=[yg y];
+    vcg=[vcg sqrt(vx^2+vy^2)/299792458];
     [K,E]=ellipke(sqrt(4*sqrt(x^2+y^2)/(Rb*(1+sqrt(x^2+y^2)/Rb)^2)));
     B=I*u0*N/(2*pi*Rb*(1+sqrt(x^2+y^2)/Rb))*(K+E*(1-(x^2+y^2)/Rb^2)/((1+sqrt(x^2+y^2)/Rb)^2-4*sqrt(x^2+y^2)/Rb));
+    Bg=[Bg B];
     ax=q/m*(-V*x/(log(R/R0)*(x^2+y^2))+B*vy);
     ay=q/m*(-V*y/(log(R/R0)*(x^2+y^2))-B*vx);
+    pg=[pg q^2*(ax^2+ay^2)/(6*pi*e0*c^3)];
     vx=vx+ax*dt;
     vy=vy+ay*dt;
     x=x+vx*dt;
     y=y+vy*dt;
-    tg=[tg dt+tg(end)];
-    xg=[xg x];
-    yg=[yg y];
-    pg=[pg q^2*(ax^2+ay^2)/(6*pi*e0*c^3)];
-    vcg=[vcg sqrt(vx^2+vy^2)/299792458];
     if(sqrt(x^2+y^2)>R || sqrt(x^2+y^2)<R0) %Stop if the electron collides with an electrode
         break;
     end
@@ -71,16 +73,21 @@ title('position (m)');
 axis equal;
 
 figure('Position',[1200,50,700,500]);
-s1=subplot(2,1,1);
+s1=subplot(3,1,1);
 plot(tg,pg);
 xlabel('time (sec)');
 ylabel('power radiated/e- (watts)');
 
-s2=subplot(2,1,2);
+s2=subplot(3,1,2);
 plot(tg,vcg);
 xlabel('time (sec)');
 ylabel('v/c');
-linkaxes([s1 s2],'x');
 
+s3=subplot(3,1,3);
+plot(tg,Bg);
+xlabel('time (sec)');
+ylabel('Magetic Field Strength (T)');
+
+linkaxes([s1 s2 s3],'x');
 totalPowerRadiated_Watts=sum(dt*pg)*neps
 exposureTimeToOneYearRadLimit_days=.05*70/totalPowerRadiated_Watts/60/60/24 %50mSv (Sv=J/kg) is US rad worker yearly limit
